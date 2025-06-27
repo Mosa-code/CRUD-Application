@@ -255,7 +255,8 @@ $env:PYTHONPATH="."; $env:DATABASE_URL="postgresql://postgres:postgres@localhost
 - PUT /users/{id} - updates a user and asserts changes
 - DELETE /users/{id} - deletes a user and confirmes removal
 
-These test cases can be found in test_users.py. It should be noted that these tests hit a lical PostgreSQL instance. Make sure its running, or adjust DATABASE_URL in your test config
+these test cases can be found in test_users.py. It should be noted that these tests hit a lical PostgreSQL instance. Make sure its running, or adjust DATABASE_URL in your test config
+
 ---
 
 ## Author
