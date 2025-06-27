@@ -9,11 +9,9 @@ This application allows creating, reading, updating, and deleting users, each de
 * PostgreSQL database
 * Dockerized backend and database
 * Postman and terminal testing support
-* Ready to expand with integration testing
+* Ready to expand with even more integration testing
 
 ---
-
-## Getting Started
 
 ### Prerequisites
 
@@ -147,6 +145,59 @@ Updated response:
     "id": 3
 }
 ```
+### postgres
+
+Of course we want to be able to connect directly to our database. we can do that easily like so:
+
+```powershell
+docker exec -it postgres psql -U postgres -d postgres
+
+psql (15.13 (Debian 15.13-1.pgdg120+1))                                                                                    
+Type "help" for help.
+
+postgres=# 
+```
+
+here we can simply test some sql queries to ensure everything is running. here are some results
+
+```powershell
+postgres=# SELECT * FROM users;
+ id |   name   | age | birth_state 
+----+----------+-----+-------------
+  2 | Noah     |  18 | IL
+  3 | Mio      |  19 | IL
+  4 | TestUser |  99 | ZZ
+  5 | Updated  |  21 | BB
+  7 | TestUser |  99 | ZZ
+  8 | Updated  |  21 | BB
+(6 rows)
+
+postgres=# SELECT name, age FROM users WHERE age = 99;
+   name   | age 
+----------+-----
+ TestUser |  99
+ TestUser |  99
+(2 rows)
+
+postgres=# SELECT name, age FROM users WHERE name = 'Mio';
+ name | age 
+------+-----
+ Mio  |  19
+(1 row)
+
+postgres=# DELETE FROM users WHERE id NOT IN (SELECT MIN(id) from users GROUP BY name, age, birth_state);
+DELETE 2
+postgres=# SELECT * FROM users;
+ id |   name   | age | birth_state 
+----+----------+-----+-------------
+  2 | Noah     |  18 | IL
+  3 | Mio      |  19 | IL
+  4 | TestUser |  99 | ZZ
+  5 | Updated  |  21 | BB
+(4 rows)
+
+```
+We showed here that we are both able to query and alter the table through raw sql if need be. 
 
 ---
 
@@ -162,18 +213,49 @@ Updated response:
 │   └── crud.py             # Optional: CRUD operations (if separated)
 ├── tests
 │   └── test_users.py      # Integration tests (to be implemented)
+|   └── test_database.py
 ├── Dockerfile
 ├── docker-compose.yml
-└── README.md
+├── README.md
+└── requirements.txt
+
 ```
 
 ---
 
 ## Integration Tests
 
-*To be implemented.*
-Tests will live in the `/tests` directory and use a test DB.
+This project includes automated tests to verify API functionality using pytest and FastAPI's TestClient.
 
+### Testing Stack
+
+- pytest: Test runner
+- httpx: for async request simulation
+- pytest-asyncio: supports async test functions
+- FastAPI TestClient: makes sync test simple
+- SQLAlchemy: scoped session for isolated DB access
+
+### how it works
+The tests use a custom testing database session to override the production DB. This is handled by overriding FastAPI's get_db dependency with TestingSessionLocal:
+
+```python
+app.dependency_overrides[get_db] = override_get_db
+```
+
+### running tests
+This is the command I used to rest the project
+
+```powershell
+$env:PYTHONPATH="."; $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"; pytest
+```
+### Current Coverage
+
+- POST /users/ - create a user and checks response data
+- GET /users/ - retrieves user list and validates format
+- PUT /users/{id} - updates a user and asserts changes
+- DELETE /users/{id} - deletes a user and confirmes removal
+
+These test cases can be found in test_users.py. It should be noted that these tests hit a lical PostgreSQL instance. Make sure its running, or adjust DATABASE_URL in your test config
 ---
 
 ## Author
